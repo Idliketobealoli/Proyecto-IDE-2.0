@@ -66,7 +66,7 @@ public class ApplicationWindow extends JFrame {
         menuBar.add(edit);
         menuBar.add(run);
         menuBar.add(help);
-        
+
         // cosas de la ventana
         this.setDefaultCloseOperation(EXIT_ON_CLOSE);
         this.setIconImage(new ImageIcon(getClass().getResource("icon.jpg")).getImage());
