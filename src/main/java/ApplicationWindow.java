@@ -1,20 +1,34 @@
+import controller.Controller;
+
 import javax.swing.*;
+import javax.swing.event.UndoableEditEvent;
+import javax.swing.event.UndoableEditListener;
+import javax.swing.undo.UndoManager;
 import java.awt.*;
+import java.awt.datatransfer.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.io.IOException;
 
 public class ApplicationWindow extends JFrame {
+    private Controller cont = new Controller();
+    private Clipboard clipboard;
+    private UndoManager undoManager;
     private JPanel panel1;
     private JPanel toolbar;
-    private JButton button1;
-    private JButton button2;
-    private JButton button3;
+    private JButton buttonRun;
+    private JButton buttonSave;
+    private JButton buttonNewFile;
     private JPanel restoDeCosasIDE;
     private JSplitPane separadorTerminal;
     private JPanel panelNoTerminal;
     private JSplitPane separadorEditorTexto;
     private JTextArea editorTexto;
     private JTree tree1;
-    private JTextArea terminal;
     private JPanel panelTerminal;
+    private JTextPane terminal;
 
     public ApplicationWindow () {
         initComponents();
@@ -22,6 +36,10 @@ public class ApplicationWindow extends JFrame {
 
     private void initComponents(){
         JMenuBar menuBar = new JMenuBar();
+        undoManager = new UndoManager();
+        undoManager.setLimit(5000);
+        clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+
 
         // creacion de menus
         JMenu file = new JMenu("File");
@@ -30,19 +48,20 @@ public class ApplicationWindow extends JFrame {
         JMenu help = new JMenu("Help");
 
         // creacion de submenus
-        JMenuItem saveAs = new JMenuItem("Save as...");
-        JMenuItem save = new JMenuItem("Save");
-        JMenuItem newFile = new JMenuItem("New file");
-        JMenuItem openFile = new JMenuItem("Open file");
-        JMenuItem close = new JMenuItem("Close");
-        JMenuItem undo = new JMenuItem("Undo");
-        JMenuItem cut = new JMenuItem("Cut");
-        JMenuItem copy = new JMenuItem("Copy");
-        JMenuItem paste = new JMenuItem("Paste");
-        JMenuItem delete = new JMenuItem("Delete");
+        JMenuItem saveAs = new JMenuItem("Save as..."); // hecho
+        JMenuItem save = new JMenuItem("Save"); // hecho
+        JMenuItem newFile = new JMenuItem("New file"); // hecho
+        JMenuItem openFile = new JMenuItem("Open file"); // hecho
+        JMenuItem close = new JMenuItem("Close"); // hecho
+        JMenuItem undo = new JMenuItem("Undo"); // hecho
+        JMenuItem redo = new JMenuItem("Redo"); // hecho
+        JMenuItem cut = new JMenuItem("Cut"); // hecho
+        JMenuItem copy = new JMenuItem("Copy"); // hecho
+        JMenuItem paste = new JMenuItem("Paste"); // hecho
+        JMenuItem delete = new JMenuItem("Delete"); // hecho
         JMenuItem runApp = new JMenuItem("Run...");
         JMenuItem compile = new JMenuItem("Compile...");
-        JMenuItem tipOfTheDay = new JMenuItem("Tip of the day");
+        JMenuItem about = new JMenuItem("About...");
         JMenuItem contactSupport = new JMenuItem("Support from the devs");
 
         // añadir opciones a los menus
@@ -52,13 +71,14 @@ public class ApplicationWindow extends JFrame {
         file.add(saveAs);
         file.add(close);
         edit.add(undo);
+        edit.add(redo);
         edit.add(cut);
         edit.add(copy);
         edit.add(paste);
         edit.add(delete);
         run.add(runApp);
         run.add(compile);
-        help.add(tipOfTheDay);
+        help.add(about);
         help.add(contactSupport);
 
         // añadir menus a la barra de herramientas
@@ -66,6 +86,204 @@ public class ApplicationWindow extends JFrame {
         menuBar.add(edit);
         menuBar.add(run);
         menuBar.add(help);
+
+        // action listeners:
+        saveAs.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String text = editorTexto.getText();
+                cont.saveAs(text);
+            }
+        });
+
+        save.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e){
+                String text = editorTexto.getText();
+                cont.save(text);
+            }
+        });
+        buttonSave.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String text = editorTexto.getText();
+                cont.save(text);
+            }
+        });
+
+        newFile.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String oldText = editorTexto.getText();
+                cont.newFile(oldText);
+            }
+        });
+        buttonNewFile.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String oldText = editorTexto.getText();
+                cont.newFile(oldText);
+            }
+        });
+
+        openFile.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e){
+               String text = cont.openFile();
+               editorTexto.setText(text);
+            }
+        });
+
+        close.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String oldText = editorTexto.getText();
+                if (cont.askIfSave(oldText) == 0) {
+                    cont.save(oldText);
+                }
+                System.exit(0);
+            }
+        });
+
+        editorTexto.getDocument().addUndoableEditListener(new UndoableEditListener() {
+            @Override
+            public void undoableEditHappened(UndoableEditEvent e) {
+                undoManager.addEdit(e.getEdit());
+            }
+        });
+
+        // deshacer
+        undo.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (undoManager.canUndo()){
+                    undoManager.undo();
+                }
+            }
+        });
+
+        // rehacer
+        redo.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (undoManager.canRedo()){
+                    undoManager.redo();
+                }
+            }
+        });
+
+        // copy
+        copy.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if(editorTexto.getSelectedText() != null){
+                    StringSelection selection = new StringSelection("" + editorTexto.getSelectedText());
+                    clipboard.setContents(selection, selection);
+                }
+            }
+        });
+
+        // paste
+        paste.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Transferable data = clipboard.getContents(null);
+                if (data != null && data.isDataFlavorSupported(DataFlavor.stringFlavor)){
+                    try {
+                        editorTexto.replaceSelection(""+data.getTransferData(DataFlavor.stringFlavor));
+                    } catch (UnsupportedFlavorException | IOException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            }
+        });
+
+        // igual que el metodo copy, pero reemplazando la seleccion por "" tras copiar en el portapapeles.
+        cut.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if(editorTexto.getSelectedText() != null){
+                    StringSelection selection = new StringSelection("" + editorTexto.getSelectedText());
+                    clipboard.setContents(selection, selection);
+                    editorTexto.replaceSelection("");
+                }
+            }
+        });
+
+        // delete
+        delete.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (editorTexto.getSelectedText() != null) {
+                    editorTexto.replaceSelection("");
+                }
+            }
+        });
+
+        /*
+        En la práctica pone lo siguiente:
+        "mostrar la información de autoría del bloc de notas en un JOptionPane o JDialog modal"
+        Yo aqui lo que interpreto es que haga un JOptionPane con un texto que ponga "Autor:[nombre]"
+        mediante un showMessageDilaog, asique eso haré.
+         */
+        about.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                cont.about();
+            }
+        });
+
+        contactSupport.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    cont.contactSupport();
+                }
+                catch (IOException ex) {
+                    System.out.println("A problem has occured, sorry. [IOException]");
+                }
+            }
+        });
+
+        buttonRun.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                terminal.setText(cont.run(editorTexto.getText()));
+                // terminal.setText(cont.run().getOutputStream().write());
+                // terminal.setText(cont.run().toString());
+            }
+        });
+
+        runApp.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // terminal.setText(cont.run());
+                // terminal.setText(cont.run().);
+                terminal.setText(cont.run(editorTexto.getText()));
+            }
+        });
+
+        compile.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                cont.compile(editorTexto.getText());
+            }
+        });
+
+        editorTexto.addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+                char tab = e.getKeyChar();
+                if(tab == KeyEvent.VK_TAB) {
+                    undoManager.undo();
+                    editorTexto.replaceSelection("    ");
+                }
+            }
+            @Override
+            public void keyPressed(KeyEvent e) {}
+            @Override
+            public void keyReleased(KeyEvent e) {}
+        });
 
         // cosas de la ventana
         this.setDefaultCloseOperation(EXIT_ON_CLOSE);
