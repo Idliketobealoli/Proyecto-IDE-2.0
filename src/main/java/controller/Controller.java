@@ -162,4 +162,8 @@ public class Controller extends Component {
             e.printStackTrace();
         }
     }
+
+    public void print() {
+        JOptionPane.showMessageDialog(null, "Would you like to print the file?", "Print?", JOptionPane.INFORMATION_MESSAGE);
+    }
 }

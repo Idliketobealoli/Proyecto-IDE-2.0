@@ -52,6 +52,7 @@ public class ApplicationWindow extends JFrame {
         JMenuItem save = new JMenuItem("Save"); // hecho
         JMenuItem newFile = new JMenuItem("New file"); // hecho
         JMenuItem openFile = new JMenuItem("Open file"); // hecho
+        JMenuItem print = new JMenuItem("Print"); // hecho
         JMenuItem close = new JMenuItem("Close"); // hecho
         JMenuItem undo = new JMenuItem("Undo"); // hecho
         JMenuItem redo = new JMenuItem("Redo"); // hecho
@@ -59,16 +60,17 @@ public class ApplicationWindow extends JFrame {
         JMenuItem copy = new JMenuItem("Copy"); // hecho
         JMenuItem paste = new JMenuItem("Paste"); // hecho
         JMenuItem delete = new JMenuItem("Delete"); // hecho
-        JMenuItem runApp = new JMenuItem("Run...");
-        JMenuItem compile = new JMenuItem("Compile...");
-        JMenuItem about = new JMenuItem("About...");
-        JMenuItem contactSupport = new JMenuItem("Support from the devs");
+        JMenuItem runApp = new JMenuItem("Run..."); // hecho
+        JMenuItem compile = new JMenuItem("Compile..."); // hecho
+        JMenuItem about = new JMenuItem("About..."); // hecho
+        JMenuItem contactSupport = new JMenuItem("Support from the devs"); // hecho
 
         // añadir opciones a los menus
         file.add(newFile);
         file.add(openFile);
         file.add(save);
         file.add(saveAs);
+        file.add(print);
         file.add(close);
         edit.add(undo);
         edit.add(redo);
@@ -131,6 +133,13 @@ public class ApplicationWindow extends JFrame {
             public void actionPerformed(ActionEvent e){
                String text = cont.openFile();
                editorTexto.setText(text);
+            }
+        });
+
+        print.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                cont.print();
             }
         });
 
